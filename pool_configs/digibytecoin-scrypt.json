@@ -1,49 +1,47 @@
 {
     "enabled": true,
-    "coin": "applebytecoin.json",
+    "coin": "digibytecoin-scrypt.json",
 
     "auxes": [ // Defines auxillery coins
         ],
-    "address": "AYQmAbqRzSMwZByhoacKoRwpMr8DVyPsXp",
+    "address": "D8wxArJEhJrsFFLtXXKqiWi9H2FrQzYzNu",
     "rewardRecipients": {
-"AaYSn8T7fwMZxzYvsf38FqY1c5MQuYvcSf": 1
-      
+"D92CbK52P8xJuGBxya8gSeVB4V1bTbbgau": 1      
     },
-
     "paymentProcessing": {
         "enabled": true,
         "paymentInterval": 600,
         "minimumPayment": 9999999999,
         "daemon": {
             "host": "127.0.0.1",
-            "port": 9304,
+            "port": 7307,
             "user": "pravin",
             "password": "12345"
         }
     },
 
     "ports": {
-        "3001": {
+        "1020": {
             "diff": 8,
-"varDiff": {
+   "varDiff": {
                 "minDiff": 8,
-                "maxDiff": 16384,
+                "maxDiff": 4096,
                 "targetTime": 15,
                 "retargetTime": 90,
                 "variancePercent": 30
             }
         },
-        "3002": {
-            "diff": 1024,
+        "1021": {
+            "diff": 256,
             "varDiff": {
-                "minDiff": 1024,
-                "maxDiff": 16384,
+                "minDiff": 256,
+                "maxDiff": 4096,
                 "targetTime": 15,
                 "retargetTime": 90,
                 "variancePercent": 30
             }
         },
-        "3003": {
+        "1022": {
             "diff": 512
         }
     },
@@ -51,7 +49,7 @@
     "daemons": [
         {
             "host": "127.0.0.1",
-            "port": 9304,
+            "port": 7307,
             "user": "pravin",
             "password": "12345"
         }
