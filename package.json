@@ -14,9 +14,9 @@
 	"merged",
 	"sigwo"
     ],
-    "homepage": "https://github.com/UNOMP/unified-node-open-mining-portal",
+    "homepage": "https://github.com/frndxyz/unomp-windows",
     "bugs": {
-        "url": "https://github.com/UNOMP/unified-node-open-mining-portal/issues"
+        "url": "https://github.com/frndxyz/unomp-windows/issues"
     },
     "license": "GPL-2.0",
     "author": "Steven Grove",
@@ -36,9 +36,10 @@
     },
     "repository": {
         "type": "git",
-        "url": "https://github.com/UNOMP/unified-node-open-mining-portal.git"
+        "url": "https://github.com/frndxyz/unomp-windows.git"
     },
-    "dependencies": {        
+    "dependencies": { 
+	"merged-pooler": "https://github.com/frndxyz/merged-pooler-windows.git",
         "dateformat": "*",
 	"log4js": "*",
 	"bitcoin": "*",
