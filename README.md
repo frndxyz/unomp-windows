@@ -1,6 +1,6 @@
 [![Build Status](https://travis-ci.org/UNOMP/unified-node-open-mining-portal.png?branch=master)](https://travis-ci.org/UNOMP/unified-node-open-mining-portal)
 
-#### Unified NOMP
+#### Unified NOMP -windows   (Donate: 1F6yxTyjrbh4625VyScD6eVSnceLe1ATAK)
 
 This repo will serve as an open source multipool. Multipool capabilities are in alpha testing in this version. This will give the ability to utilize NOMP with merged capabilities but NO merged coin payouts. *ONLY* the main chain coins will payout and calculate correctly at the moment.
 
@@ -503,6 +503,10 @@ the `merged-pooler` and `node-multi-hashing` modules, and any config files that 
 * Remove the dependenices by deleting the `node_modules` directory with `rm -r node_modules`.
 * Run `npm update` to force updating/reinstalling of the dependencies.
 * Compare your `config.json` and `pool_configs/coin.json` configurations to the latest example ones in this repo or the ones in the setup instructions where each config field is explained. You may need to modify or add any new changes.
+
+Donation - UNOMP windows
+----------
+* BTC: `1F6yxTyjrbh4625VyScD6eVSnceLe1ATAK`
 
 Donations
 ---------
