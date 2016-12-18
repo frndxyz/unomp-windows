@@ -1,0 +1,5 @@
+{
+    "name": "trolltoken",
+    "symbol": "TKN",
+    "algorithm": "sha256"
+}

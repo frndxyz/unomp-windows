@@ -1,0 +1,5 @@
+{
+    "name": "Digibyte-scrypt",
+    "symbol": "DGB-scrypt",
+    "algorithm": "scrypt"
+}

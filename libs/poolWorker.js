@@ -9,7 +9,9 @@ module.exports = function(logger){
 
     var _this = this;
 
-    var poolConfigs  = JSON.parse(process.env.pools);
+    
+
+    var poolConfigs = JSON.parse(process.env.pools1 + process.env.pools2);
     var portalConfig = JSON.parse(process.env.portalConfig);
 
     var forkId = process.env.forkId;
@@ -194,7 +196,7 @@ module.exports = function(logger){
 
         var pool = Stratum.createPool(poolOptions, authorizeFN, logger);
         pool.on('share', function(isValidShare, isValidBlock, data){
-
+            
             var shareData = JSON.stringify(data);
 
             if (data.blockHash && !isValidBlock)
@@ -222,7 +224,7 @@ module.exports = function(logger){
         }).on('started', function(){
             _this.setDifficultyForProxyPort(pool, poolOptions.coin.name, poolOptions.coin.algorithm);
         });
-
+        
         pool.start();
         pools[poolOptions.coin.name] = pool;
     }
@@ -305,10 +307,14 @@ module.exports = function(logger){
                             + socket.remoteAddress + ' on '
                             + port + ' routing to ' + currentPool);
                         
-                        if (pools[currentPool])
-                            pools[currentPool].getStratumServer().handleNewClient(socket);
-                        else
-                            pools[initialPool].getStratumServer().handleNewClient(socket);
+                        if (pools[currentPool].getStratumServer() != null)
+                                                            try {pools[currentPool].getStratumServer().handleNewClient(socket);}
+                                    catch(err) {}
+                            else
+                           setTimeout(function(){
+                                   try {pools[initialPool].getStratumServer().handleNewClient(socket);}
+                                    catch(err) {}
+                            }, 3000);
 
                     }).listen(parseInt(port), function() {
                         logger.warn(logSystem, logComponent, logSubCat, 'Switching "' + switchName

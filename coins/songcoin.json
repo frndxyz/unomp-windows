@@ -1,0 +1,5 @@
+{
+    "name": "Songcoin",
+    "symbol": "SONG",
+    "algorithm": "scrypt"
+}

@@ -23,17 +23,23 @@ if (!fs.existsSync('config.json')){
     return;
 }
 
+ 
+
 var portalConfig = JSON.parse(JSON.minify(fs.readFileSync("config.json", {encoding: 'utf8'})));
 var poolConfigs;
 
 var logger = PoolLogger.getLogger();
 
 logger.info('New Relic');
+
 try {
 //    require('newrelic');
     if (cluster.isMaster)
         logger.debug('NewRelic', 'Monitor', 'New Relic initiated');
 } catch(e) {}
+
+
+
 
 
 //Try to give process ability to handle 100k concurrent connections
@@ -101,11 +107,16 @@ var buildPoolConfigs = function(){
     /* Get filenames of pool config json files that are enabled */
     fs.readdirSync(configDir).forEach(function(file){
         if (!fs.existsSync(configDir + file) || path.extname(configDir + file) !== '.json') return;
-        var poolOptions = JSON.parse(JSON.minify(fs.readFileSync(configDir + file, {encoding: 'utf8'})));
+       
+ var poolOptions = JSON.parse(JSON.minify(fs.readFileSync(configDir + file, {encoding: 'utf8'})));
         if (!poolOptions.enabled) return;
+
+
+
         poolOptions.fileName = file;
         poolConfigFiles.push(poolOptions);
     });
+
 
 
     /* Ensure no pool uses any of the same ports as another pool */
@@ -267,7 +278,7 @@ var spawnPoolWorkers = function(){
 
 
     var serializedConfigs = JSON.stringify(poolConfigs);
-
+    fs.writeFileSync("json1.txt", JSON.stringify(serializedConfigs));
     var numForks = (function(){
         if (!portalConfig.clustering || !portalConfig.clustering.enabled)
             return 1;
@@ -284,9 +295,11 @@ var spawnPoolWorkers = function(){
         var worker = cluster.fork({
             workerType: 'pool',
             forkId: forkId,
-            pools: serializedConfigs,
+            pools1: serializedConfigs.substr(0,32700),
+            pools2:serializedConfigs.substr(32700),
             portalConfig: JSON.stringify(portalConfig)
         });
+        
         worker.forkId = forkId;
         worker.type = 'pool';
         poolWorkers[forkId] = worker;
@@ -443,8 +456,9 @@ var startPaymentProcessor = function(){
         return;
 
     var worker = cluster.fork({
-        workerType: 'paymentProcessor',
-        pools: JSON.stringify(poolConfigs)
+        workerType: 'paymentProcessor',       
+        pools1: JSON.stringify(poolConfigs).substr(0,32700),
+        pools2:JSON.stringify(poolConfigs).substr(32700)
     });
     worker.on('exit', function(code, signal){
         logger.error('Master', 'Payment Processor', 'Payment processor died, spawning replacement...');
@@ -487,7 +501,8 @@ var startWebsite = function(){
 
     var worker = cluster.fork({
         workerType: 'website',
-        pools: JSON.stringify(poolConfigs),
+        pools1: JSON.stringify(poolConfigs).substr(0,32700),
+        pools2: JSON.stringify(poolConfigs).substr(32700),
         portalConfig: JSON.stringify(portalConfig)
     });
     worker.on('exit', function(code, signal){
@@ -507,8 +522,9 @@ var startProfitSwitch = function(){
     }
 
     var worker = cluster.fork({
-        workerType: 'profitSwitch',
-        pools: JSON.stringify(poolConfigs),
+        workerType: 'profitSwitch',        
+        pools1: JSON.stringify(poolConfigs).substr(0,32700),
+        pools2: JSON.stringify(poolConfigs).substr(32700),
         portalConfig: JSON.stringify(portalConfig)
     });
     worker.on('exit', function(code, signal){

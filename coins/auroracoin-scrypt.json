@@ -1,0 +1,5 @@
+{
+    "name": "aurora-scrypt",
+    "symbol": "AUR-scrypt",
+    "algorithm": "scrypt"
+}

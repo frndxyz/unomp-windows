@@ -1,0 +1,233 @@
+
+
+
+
+<div class="row">
+        
+    <div class="col-md-8">
+     
+            <div class="input-group margin">
+            <input type="text" placeholder="Enter wallet address" id="address" class="form-control">
+            <span class="input-group-btn">
+                <button type="button" class="btn btn-success btn-flat" id="show">Go!</button>
+            </span>
+        </div>
+
+    </div>
+</div>  
+
+<div class="row">
+    <center id="workerinfo" style="display:none">
+        <div class="col-md-12">
+            
+            <h4>Estimated balances will only show if you've been part of a confirmed block and have had a previous payout.</h4>
+            <div>
+                <h3>
+
+                    <strong>
+                        <span id="walletaddress" class="text-lg label label-primary">
+                           
+                        </span>
+                    </strong>
+                </h3>
+            </div>
+
+            <h3>
+                <strong><p class="text-medium">This shift you have earned:</p></strong>
+                <div>
+                    <center>
+                    <div class="col-md-12">
+                    <div class=" padding-bottom-none-phone">
+                        <!-- Stats Widget -->
+                        <div class="widget-stats widget-stats-2" href="">
+                        <span class="text-large text-success" id="currentearning"></span>
+                        <br>
+                        <strong>
+                            <img src="" id="coinIcon" title="payout coin image">
+                         <span class="text-small" id="coin"></span>
+                        </strong>
+                        </div><!-- // Stats Widget END -->
+                        </div>
+                    </div>
+                    </center>
+                </div>
+            </h3>
+            
+            <p>Your previous balance with the pool is currently: <strong><span id="pendingbalance">0.00</span></strong></p>
+            <p>Total amount paid to this address: <strong><span id="totalpaid">0.00</span></strong></p>
+
+
+
+        </div>
+
+    </center>
+    </div>
+
+
+        <div class="row">
+            <div class="col-md-12">
+                <div class="box box-danger">
+                    <div class="box-header with-border">
+                        <h3 class="box-title"><i class="fa fa-rocket"></i> Current Hashrate </h3>
+                        <div class="box-tools pull-right">
+                            <button data-widget="collapse" class="btn btn-box-tool"><i class="fa fa-minus"></i></button>
+                            <button data-widget="remove" class="btn btn-box-tool"><i class="fa fa-times"></i></button>
+                        </div>
+                    </div>
+                    <div class="box-body table-responsive">
+
+                        <table class="table table-hover table-striped tablesorter">
+                            <thead>
+                                {{ for(var algo in it.stats.algos) { }}
+
+
+                            <th>{{=algo.toUpperCase()}}</th>
+
+                            {{ } }}
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    {{ for(var algo in it.stats.algos) { }}
+
+
+                                    <td id="worker_{{=algo}}"></td>
+
+                                    {{ } }}
+                                </tr>
+
+
+                            </tbody>
+                        </table>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="box box-danger">
+            <div class="box-header with-border">
+                <h3 class="box-title"><i class="fa fa-rocket"></i> Past 8 Round Payments </h3>
+                <div class="box-tools pull-right">
+                    <button data-widget="collapse" class="btn btn-box-tool"><i class="fa fa-minus"></i></button>
+                    <button data-widget="remove" class="btn btn-box-tool"><i class="fa fa-times"></i></button>
+                </div>
+            </div>
+            <div class="box-body table-responsive">
+
+                <table class="table table-hover table-striped tablesorter" id="pastpayments">                 
+                    
+                    <tbody>
+                       
+
+
+                    </tbody>
+                </table>
+
+            </div>
+        </div>
+
+    </div>
+</div>
+
+
+
+
+
+        <script type="text/javascript">
+            $(document).ready(function () {
+                $.ajaxSetup({
+                    async: false
+                });
+
+                var algos = [];
+
+                "{{ for (var algo in it.stats.algos) { }}"
+
+                    algos.push('{{=algo}}');
+
+
+                    "{{ } }}"
+
+                $("#show").click(function () {
+
+                    var address = $("#address").val();
+
+                    //get worker hashrate for each algo
+                    for (var algo in algos) {
+                        
+                        $.get("/api/workerhashrate/" + algos[algo] + "/" + address, function (data) {
+
+                            var part = data.split(":");
+                            var hashrate = part[0];
+                                                  
+
+                            $("#worker_" + algos[algo]).html(getReadableHashRateString(hashrate, 'tooltip').toString("0.00"));
+
+                        });
+
+                    }
+
+
+
+                    var part1 = address.split(".");
+                    var coinSymbol = part1[1];
+                    $("#coin").html(coinSymbol.toUpperCase() + "(estimated)");
+
+                    $("#coinIcon").attr("src", "/static/coins/" + coinSymbol.trim() + ".png");
+
+                    $("#walletaddress").html(address);
+
+                    $.get("/api/workertotalpaid/"+address, function (data) {
+                        $("#totalpaid").html(data);
+                    });
+
+                    $.get("/api/currentearning/"+address, function (data) {
+                        if (data == "") data = "0.00";
+                        $("#currentearning").html(data);
+                    });
+
+                    $.get("/api/pendingbalance/"+address, function (data) {
+                        $("#pendingbalance").html(data);
+                    });
+
+                    $.getJSON("/api/pastpaid/" + address, function (data) {
+
+                        
+                        $("#pastpayments tbody").html("");
+                        
+
+                        for (var i in data)
+                        {
+                          
+                            
+                            $("#pastpayments tbody").append("<span class='label label-primary'>" + Number(data[i]).toFixed(5) + " " + coinSymbol.toUpperCase() + "</span> &nbsp;&nbsp;&nbsp;");
+                            
+
+                        }
+
+                        
+
+
+                        
+                    });
+
+
+
+
+
+
+
+
+                    $("#workerinfo").show();
+
+                });
+
+
+
+
+
+            });
+        </script>

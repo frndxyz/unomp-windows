@@ -1,197 +1,112 @@
-<style>
-    #topStats {
-        margin: 0 9px;
-    }
-    #topStats > div {
-        display: flex;
-    }
-    #topStats > div > div {
-        flex: 1 1 auto;
-        margin: 18px 9px 0px 9px;
-        padding: 10px;
-        display: flex;
-        flex-direction: column;
-    }
-    .boxStatsHeader{
-        font-size: 1.3em;
-        margin: 0 0 5px 10px;
-    }
-    #boxStatsLeft{
-        background-color: #b064e1;
-    }
-    #boxStatsRight{
-        background-color: #10bb9c;
-    }
-    .boxStats{
-        border: solid 0px #c7c7c7;
-        color: white;
-    }
-    .boxStatsList{
-        display: flex;
-        flex-flow: row wrap;
-        justify-content: space-around;
-        opacity: 0.77;
-        margin-bottom: 5px;
-        flex: 1 1 auto;
-        align-content: center;
-    }
-    .boxStatsList i.fa{
-        height: 15px;
-        width: 33px;
-        text-align: center;
-    }
-    .boxStatsList > div{
-        padding: 5px 20px;
-    }
-    .boxStatsList > div > div{
-        padding: 3px;
-    }
-    #timeSelector {
-        padding-top: 25px;
-        padding-bottom: 15px;
-        text-align:center;
-    }
-    #bottomCharts{
-        padding: 18px;
-    }
-    #bottomCharts > div > div > svg{
-        display: block;
-        height: 280px;
-    }
-    .chartWrapper{
-        border: solid 1px #c7c7c7;
-        padding: 5px;
-        margin-bottom: 18px;
-        display: block;
-        text-align: -webkit-center;
-    }
-    #bottomTableStats {
-        padding-bottom: 20px;
-    }
-    #statTable {
-        margin: 0 auto;
-        text-align: center;
-    }
-</style>
+
 <div class="row">
-        <article class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
-                <div class="jarviswidget jarviswidget-color-blueDark" id="wid-id-0" data-widget-editbutton="false">
-                        <header>
-                                <span class="widget-icon"> <i class="fa fa-table"></i> </span>
-                                <h2>Block Overview</h2>
-                        </header>
-                        <div>
-                                <div class="jarviswidget-editbox">
-                                </div>
-                                <div class="widget-body">
-                                        <div class="table-responsive">
-                                                <table class="table table-bordered">
-                                                        <thead>
-                                                                <tr>
-                                                                        <th>Pool</th>
-                                                                        <th>Valid Shares</th>
-                                                                        <th>Invalid Shares</th>
-                                                                        <th>Total Blocks</th>
-                                                                </tr>
-                                                        </thead>
-                                                        <tbody>
-                					{{ for(var pool in it.stats.pools) { }}
-								<tr>
-									<td>{{=pool}}</td>
-									<td>{{=it.stats.pools[pool].poolStats.validShares}}</td>
-									<td>{{=it.stats.pools[pool].poolStats.invalidShares}}</td>
-									<td>{{=it.stats.pools[pool].poolStats.validBlocks}}</td>
-								</tr>
-					                {{ } }}
-							</tbody>
-						</table>
-					</div>
-				</div>
-			</div>
-		</div>
-		<div class="jarviswidget jarviswidget-color-blueDark" id="wid-id-0" data-widget-editbutton="false">
-                        <header>
-                                <span class="widget-icon"> <i class="fa fa-table"></i> </span>
-                                <h2>Blocks</h2>
-                        </header>
-                        <div>
-                                <div class="jarviswidget-editbox">
-                                </div>
-                                <div class="widget-body">
-                                        <div class="table-responsive">
-                                                <table class="table table-bordered">
-                                                        <thead>
-                                                                <tr>
-                                                                        <th>Pool</th>
-                                                                        <th>Pending Blocks</th>
-                                                                        <th>Confirmed Blocks</th>
-                                                                        <th>Orphaned Blocks</th>
-                                                                </tr>
-                                                        </thead>
-                                                        <tbody>
-                                                        {{ for(var pool in it.stats.pools) { }}
-                                                                <tr>
-                                                                        <td>{{=pool}}</td>
-                                                                        <td>{{=it.stats.pools[pool].blocks.pending}}</td>
-                                                                        <td>{{=it.stats.pools[pool].blocks.confirmed}}</td>
-                                                                        <td>{{=it.stats.pools[pool].blocks.orphaned}}</td>
-                                                                </tr>
-                                                        {{ } }}
-                                                        </tbody>
-                                                </table>
-                                        </div>
-                                </div>
-                        </div>
-                </div>
-		<div class="jarviswidget jarviswidget-color-blueDark" id="wid-id-0" data-widget-editbutton="false">
-                        <header>
-                                <span class="widget-icon"> <i class="fa fa-table"></i> </span>
-                                <h2>Pool Stats</h2>
-                        </header>
-                        <div>
-                                <div class="jarviswidget-editbox">
-                                </div>
-                                <div class="widget-body">
-                                        <div class="table-responsive">
-                                                <table class="table table-bordered">
-                                                        <thead>
-                                                                <tr>
-									<th>Pool</th>
-							                <th>Algo</th>
-        							        <th>Workers</th>
-                							<th>Valid Shares</th>
-        							        <th>Invalid Shares</th>
-        							        <th>Total Blocks</th>
-        							        <th>Pending</th>
-       								        <th>Confirmed</th>
-                							<th>Orphaned</th>
-             								<th>Hashrate</th>
-                                                                </tr>
-                                                        </thead>
-                                                        <tbody>
-                                                        {{ for(var pool in it.stats.pools) { }}
-                                                                <tr>
-									<td>{{=it.stats.pools[pool].name}}</td>
-							                <td>{{=it.stats.pools[pool].algorithm}}</td>
-                							<td>{{=Object.keys(it.stats.pools[pool].workers).length}}</td>
-                							<td>{{=it.stats.pools[pool].poolStats.validShares}}</td>
-                							<td>{{=it.stats.pools[pool].poolStats.invalidShares}}</td>
-                							<td>{{=it.stats.pools[pool].poolStats.validBlocks}}</td>
-                							<td>{{=it.stats.pools[pool].blocks.pending}}</td>
-                							<td>{{=it.stats.pools[pool].blocks.confirmed}}</td>
-                							<td>{{=it.stats.pools[pool].blocks.orphaned}}</td>
-               								<td>{{=it.stats.pools[pool].hashrateString}}</td>
-                                                                </tr>
-                                                        {{ } }}
-                                                        </tbody>
-                                                </table>
-                                        </div>
-                                </div>
-                        </div>
-                </div>
-	</article>
+    <div class="col-md-12">
+        <div class="alert alert-danger">
+             This stat resets in every round and miners get paid.
+        </div>
+
+    </div>
 </div>
 
-<script>
-    document.querySelector('main').appendChild(document.createElement('script')).src = '/static/stats.js';
-</script>
+<div class="row">
+    <div class="col-md-12">
+        <div class="panel panel-primary">
+            <div class="panel-heading">
+                <h3 class="panel-title"><i class="fa fa-hdd-o"></i> Current Round Pool Stats</h3>
+            </div>
+            <div class="panel-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr><th></th>
+                                <th>Pool</th>
+                                <th>Algo</th>
+                                <th>Workers</th>
+                                <th>Valid Shares</th>
+                                <th>Invalid Shares</th>
+                                <!--<th>Total Blocks</th>-->
+                                <th>Pending</th>
+                                <th>Confirmed</th>
+                                <th>Orphaned</th>
+                                <th>Hashrate</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{ for(var pool in it.stats.pools) { }}
+                            <tr>
+                            <tr>
+                                <td><img src="/static/coins/{{=it.poolsConfigs[pool].coin.symbol.replace("-sha","").replace("-scrypt","").replace("-x11","")}}.png" /></td>
+                                <td>{{=it.stats.pools[pool].name.replace("coin", "").toUpperCase()}}</td>
+                                <td>{{=it.stats.pools[pool].algorithm}}</td>
+                                <td>{{=Object.keys(it.stats.pools[pool].workers).length}}</td>
+                                <td>{{=it.stats.pools[pool].poolStats.validShares}}</td>
+                                <td>{{=it.stats.pools[pool].poolStats.invalidShares}}</td>
+                                <!--<td>=it.stats.pools[pool].poolStats.validBlocks</td>-->
+                                <td>{{=it.stats.pools[pool].blocks.pending}}</td>
+                                <td>{{=it.stats.pools[pool].blocks.confirmed}}</td>
+                                <td>{{=it.stats.pools[pool].blocks.orphaned}}</td>
+                                <td>{{=it.stats.pools[pool].hashrateString}}</td>
+                            </tr>
+                            {{ } }}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="panel panel-primary">
+            <div class="panel-heading">
+                <h3 class="panel-title"><i class="fa fa-hdd-o"></i> Current Round Workers Stats</h3>
+            </div>
+            <div class="panel-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover table-striped tablesorter">
+                        <thead>
+                            <tr>
+                                
+                                <th>Worker</th>
+                                <th>Pool</th>
+                                <th>Shares</th>
+                                <th>Invalid shares</th>
+                                <th>Efficiency</th>
+                                <th>Hashrate</th>
+                            </tr>
+
+                        </thead>
+                        <tbody>
+
+
+                            {{ for(var pool in it.stats.pools) { }}
+
+                            {{ for(var worker in it.stats.pools[pool].workers) { }}
+                            {{var workerstat = it.stats.pools[pool].workers[worker];}}
+                            <tr>
+                                <td>{{=worker}}</td>
+                                <td>{{=it.stats.pools[pool].name}}</td>
+                                <td>{{=Math.floor(workerstat.shares)}}</td>
+                                <td>{{=Math.floor(workerstat.invalidshares)}}</td>
+                                <td>{{? workerstat.shares > 0}} {{=Math.floor(10000 * workerstat.shares / (workerstat.shares + workerstat.invalidshares)) / 100}}% {{??}} 0% {{?}}</td>
+                                <td>{{=workerstat.hashrateString}}</td>
+                            </tr>
+                            {{ } }}
+
+                            {{ } }}
+
+
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+

@@ -1,0 +1,5 @@
+{
+    "name": "aurora-sha",
+    "symbol": "AUR-sha",
+    "algorithm": "sha256"
+}

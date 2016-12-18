@@ -1,0 +1,5 @@
+{
+    "name": "Richcoin-groestl",
+    "symbol": "RICHX-groestl",
+    "algorithm": "myrgroestl"
+}

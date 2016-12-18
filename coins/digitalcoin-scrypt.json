@@ -1,0 +1,5 @@
+{
+    "name": "Digitalcoin-scrypt",
+    "symbol": "DGC-scrypt",
+    "algorithm": "scrypt"
+}

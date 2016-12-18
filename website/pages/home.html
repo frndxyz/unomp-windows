@@ -1,87 +1,430 @@
 <div class="row">
-	<article class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
-		<div class="jarviswidget jarviswidget-color-blueDark" id="wid-id-0" data-widget-editbutton="false">
-			<header>
-				<span class="widget-icon"> <i class="fa fa-table"></i> </span>
-				<h2>Global Stats</h2>
-			</header>
-			<div>
-				<div class="jarviswidget-editbox">
-				</div>
-				<div class="widget-body">
-					<div class="table-responsive">
-						<table class="table table-bordered">
-							<thead>
-								<tr>
-									<th>Algo</th>
-									<th>Miners</th>
-									<th>Hashrate</th>
-								</tr>
-							</thead>
-							<tbody>
-							{{ for(var algo in it.stats.algos) { }}
-							<tr>
-								<td>{{=algo}}</td>
-								<td>{{=it.stats.algos[algo].workers}}</td>
-								<td>{{=it.stats.algos[algo].hashrateString}}</td>
-							</tr>
-							{{ } }}
-							</tbody>	
-						</table>		
-					</div>
-				</div>
-			</div>
-		</div>
-	</article>
-        <article class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
-                <div class="jarviswidget jarviswidget-color-blueDark" id="wid-id-0" data-widget-editbutton="false">
-                        <header>
-                                <span class="widget-icon"> <i class="fa fa-table"></i> </span>
-                                <h2>Pools / Coins</h2>
-                        </header>
-                        <div>
-                                <div class="jarviswidget-editbox">
-                                </div>
-                                <div class="widget-body">
-                                        <div class="table-responsive">
-                                                <table class="table table-bordered">
-                                                        <thead>
-                                                                <tr>
-                                                                        <th>Coin</th>
-                                                                        <th>Miners</th>
-                                                                        <th>Hashrate</th>
-                                                                </tr>
-                                                        </thead>
-                                                        <tbody>
-                                                        {{ for(var pool in it.stats.pools) { }}
-                                                        <tr>
-                                                                <td>{{=pool}}</td>
-                                                                <td>{{=it.stats.pools[pool].workerCount}}</td>
-                                                                <td>{{=it.stats.pools[pool].hashrateString}}</td>
-                                                        </tr>
-                                                        {{ } }}
-                                                        </tbody>
-                                                </table>
-                                        </div>
-                                </div>
-                        </div>
+    <div class="col-md-12">
+        <div class="box box-solid">
+            <div class="box-header with-border">
+                <h3 class="box-title"><i class="fa fa-newspaper-o"></i> News</h3>
+
+                <div class="box-tools pull-right">
+
                 </div>
-        </article>
+            </div>
+
+
+            <div class="box-body chat" id="news-box">
+
+                <!-- news item -->
+                <div class="item">
+                    <img class="online" alt="admin avatar" src="static/hashgoal.png">
+                    <p class="message">
+                        <a class="name" href="#">
+                            <small class="text-muted pull-right"><i class="fa fa-clock-o"></i> 15/02/2016</small>
+                            Admin
+                        </a>
+                        <strong>Payments schedule to every 10 hours to optimize miners profitibility. </strong>
+                    </p>
+
+                </div><!-- /.item -->
+                <!-- news item -->
+                <div class="item">
+                    <img class="online" alt="admin avatar" src="static/hashgoal.png">
+                    <p class="message">
+                        <a class="name" href="#">
+                            <small class="text-muted pull-right"><i class="fa fa-clock-o"></i> 27/11/2015</small>
+                            Admin
+                        </a>
+                        <strong>Difficulty updated for high speed miners.</strong>
+                    </p>
+
+                </div><!-- /.item -->
+                <!-- news item -->
+                <div class="item">
+                    <img class="online" alt="admin avatar" src="static/hashgoal.png">
+                    <p class="message">
+                        <a class="name" href="#">
+                            <small class="text-muted pull-right"><i class="fa fa-clock-o"></i> 27/11/2015</small>
+                            Admin
+                        </a>
+                        <strong>All pending payments are sent. Check your wallet..</strong>
+                    </p>
+
+                </div><!-- /.item -->
+                <!-- news item -->
+                <div class="item">
+                    <img class="online" alt="admin avatar" src="static/hashgoal.png">
+                    <p class="message">
+                        <a class="name" href="#">
+                            <small class="text-muted pull-right"><i class="fa fa-clock-o"></i> 20/11/2015</small>
+                            Admin
+                        </a>
+                        <strong>0.01 is minimum payout for all multipool.</strong>
+                    </p>
+
+                </div><!-- /.item -->
+                <!-- news item -->
+                <div class="item">
+                    <img class="online" alt="user image" src="static/hashgoal.png">
+                    <p class="message">
+                        <a class="name" href="#">
+                            <small class="text-muted pull-right"><i class="fa fa-clock-o"></i> 16/11/2015</small>
+                            Admin
+                        </a>
+                        <strong>Megacoin and Goldcoin removed, due to many orphaned blocks and higher difficulty and low profit.</strong>
+                    </p>
+                </div><!-- /.item -->
+
+            </div>
+
+
+        </div>
+
     </div>
 </div>
 
-<script>
-    $(function() {
-        statsSource.addEventListener('message', function (e) {
-            var stats = JSON.parse(e.data);
-            for (algo in stats.algos) {
-                $('#statsMiners' + algo).text(stats.algos[algo].workers);
-                $('#statsHashrate' + algo).text(stats.algos[algo].hashrateString);
-            }
-            for (var pool in stats.pools) {
-                $('#statsMiners' + pool).text(stats.pools[pool].workerCount);
-                $('#statsHashrate' + pool).text(stats.pools[pool].hashrateString);
-            }
-        });
-    });
-</script>
+
+<div class="row">
+   
+        <div class="row">
+            <div class="col-md-12">
+
+                <div class="box box-danger">
+                    <div class="box-header with-border">
+                        <h3 class="box-title"><i class="fa fa-rocket"></i> Getting Started Guide </h3>
+                        <div class="box-tools pull-right">
+                            <button data-widget="collapse" class="btn btn-box-tool"><i class="fa fa-minus"></i></button>
+                            <button data-widget="remove" class="btn btn-box-tool"><i class="fa fa-times"></i></button>
+                        </div>
+                    </div>
+                    <div class="box-body table-responsive">
+
+                        <b>1.</b> Mine at any of below ports. <br /><br />
+                        <b>2.</b> You will be get paid only in  currencies listed under <b><i>Payout Options</i></b> section. <br /><br />
+                        <b>3.</b> you must specify <b>.coinSymbol</b> at the end of worker address. <b>Example.</b> <i>"LTC_wallet_address</i><b>.ltc</b>". we are using this extension to pay users in their favorite cryptocurrency. <br /><br />
+                        <br /><br />
+
+
+
+                    </div><!-- /.box-body -->
+                </div>
+
+            </div><!-- /.col (LEFT) -->
+
+        </div>
+
+        <div class="row">
+            <div class="col-md-12">
+                <div class="box box-danger">
+                    <div class="box-header with-border">
+                        <h3 class="box-title"><i class="fa fa-usd"></i> Payout Options</h3>
+                        <div class="box-tools pull-right">
+                            <span class="label label-danger" id="coinCount"></span>
+                            <button data-widget="collapse" class="btn btn-box-tool"><i class="fa fa-minus"></i></button>
+                            <button data-widget="remove" class="btn btn-box-tool"><i class="fa fa-times"></i></button>
+                        </div>
+                    </div><!-- /.box-header -->
+                    <div class="box-body no-padding">
+                        <ul class="users-list clearfix" id="payoutCoins" title="list of payout options">
+
+                            <!-- payout coins-->
+
+
+                        </ul><!-- /.users-list -->
+                    </div><!-- /.box-body -->
+                    <div class="box-footer text-center">
+                        <a class="uppercase" href="javascript::">...</a>
+                    </div><!-- /.box-footer -->
+                </div>
+
+            </div>
+        </div>
+
+
+        <div class="row">
+            <div class="col-md-12">
+                <div class="box box-primary">
+                    <div class="box-header">
+                        <h3 class="box-title"><i class="fa fa-area-chart"></i> Visual Algorithm Statstics</h3>
+                        <div class="box-tools pull-right">
+                            <button data-widget="collapse" class="btn btn-box-tool"><i class="fa fa-minus"></i></button>
+                            <button data-widget="remove" class="btn btn-box-tool"><i class="fa fa-times"></i></button>
+                        </div>
+                    </div>
+                    <div class="box-body chart-responsive">
+                        <div id="revenue-chart" style="height:250px;"></div>
+                    </div><!-- /.box-body -->
+                </div>
+            </div>
+        </div>
+
+
+
+        <div class="row">
+            <div class="col-md-12">
+                <div class="alert alert-danger">
+                    <b> Stratum Host: </b> stratum+tcp://{{=it.portalConfig.website.stratumHost}}
+                <br/> <b> use Port 1111-Sha256,1116-scrypt,1121-x11 for High speed miners.</b></div>
+
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12">
+
+                <div class="box box-danger">
+                    <div class="box-header with-border">
+                        <h3 class="box-title"><i class="fa fa-server"></i> Algo Stats & Profit Switching Ports</h3>
+                        <div class="box-tools pull-right">
+                            <button data-widget="collapse" class="btn btn-box-tool"><i class="fa fa-minus"></i></button>
+                            <button data-widget="remove" class="btn btn-box-tool"><i class="fa fa-times"></i></button>
+                        </div>
+                    </div>
+                    <div class="box-body table-responsive">
+
+
+                        <table class="table table-hover table-striped tablesorter">
+                            <thead>
+                                <tr>
+
+                                    <th title="algorithm name">Algo</th>
+                                    <th title="Total hashrate of the algo">Hashrate</th>
+                                    <th title="Total miners mining this algo">Miners</th>
+                                    <th title="current round profitability this algo">Profitability<br />(Current)</th>
+                                    <th title="last round profitability this algo">Profitability<br />(Last)</th>
+                                    <th title="Profitability this algo">Currently Mining</th>
+                                    <th title="mining port">Ports</th>
+
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {{ for(var algo in it.stats.algos) { }}
+                                <tr>
+
+                                    <td>{{=algo}}</td>
+                                    <td>{{=it.stats.algos[algo].hashrateString}}</td>
+                                    <td>{{=it.stats.algos[algo].workers}}</td>
+                                    <td><span id="{{=algo}}_profit">0.000</span><i class="fa fa-btc"></i></td>
+                                    <td><span id="{{=algo}}_lastprofit">0.000</span><i class="fa fa-btc"></i></td>
+                                    <td><span id="current_{{=algo}}"> </span></td>
+
+                                    <td>
+                                        {{ for(var port in it.portalConfig.switching[algo].ports){ }}
+
+                                        <span class="label label-primary">
+                                            Port: {{=port}}
+                                        </span>
+                                        <span class="label label-danger">vardiff {{=it.portalConfig.switching[algo].ports[port].diff}} </span>
+                                        <br />
+
+                                        {{ } }}
+                                    </td>
+                                </tr>
+                                {{ } }}
+                            </tbody>
+                        </table>
+
+                    </div><!-- /.box-body -->
+                </div>
+
+            </div><!-- /.col (LEFT) -->
+
+        </div>
+
+
+
+        <div class="row">
+            <div class="col-md-12">
+
+                <div class="box box-danger">
+                    <div class="box-header with-border">
+                        <h3 class="box-title"><i class="fa fa-bars"></i> Current Round Blocks</h3>
+                        <div class="box-tools pull-right">
+                            <button data-widget="collapse" class="btn btn-box-tool"><i class="fa fa-minus"></i></button>
+                            <button data-widget="remove" class="btn btn-box-tool"><i class="fa fa-times"></i></button>
+                        </div>
+                    </div>
+                    <div class="box-body table-responsive">
+
+                        <table class="table table-hover table-striped tablesorter">
+                            <thead>
+                                <tr>
+                                    <th title="coin symbol">Coin</th>
+                                    <th title="Block Height">Height</th>
+                                    <th title="Txhash">TxHash</th>
+                                    <th title="BlockHash">Block Hash</th>
+                                    <th title="Block finder">Finder</th>
+                                    <th title="block reward">Reward</th>
+                                    <th title="block status">Status</th>
+
+                                </tr>
+                            </thead>
+                            <tbody id="blocks"></tbody>
+                        </table>
+
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <script type="text/javascript">
+
+
+            $(document).ready(function () {
+                $('#news-box').slimScroll({
+                    height: '250px',
+                    alwaysVisible: true
+                });
+            });
+        </script>
+
+
+
+        <script type="text/javascript">
+            $(document).ready(function () {
+
+                {{ for (var algo in it.stats.algos) { }}
+
+
+                    $.get("/api/getcurrentprofit/{{=algo}}", function (data) {
+
+                        $("#{{=algo}}_profit").html(parseFloat(data).toFixed(5));
+
+                    });
+
+                    $.get("/api/getlastprofit/{{=algo}}", function (data) {
+
+                        $("#{{=algo}}_lastprofit").html(parseFloat(data).toFixed(5));
+
+                    });
+
+                    $.get("/api/getproxystate/{{=algo}}", function (data) {
+
+                        $("#current_{{=algo}}").html(data);
+
+                    });
+
+
+                    {{ } }}
+
+
+            });
+
+        </script>
+
+
+
+
+
+        <script type="text/javascript">
+            $(document).ready(function () {
+
+
+
+                $.getJSON("/api/getpaymentcoins", function (data) {
+
+                    var totalcoins = 0;
+
+                    for (var coin in data) {
+
+                        totalcoins++;
+
+                        var value = data[coin];
+                        var part = value.split(":");
+                        var symbol = part[0];
+                        var fees = part[1];
+                        var bonus = part[2] || 0;
+                        var coinHtml = "<li>" +
+                            '<b style="color:blue">Bonus:' + bonus + '</b><br/>' +
+                             '<b>Fees:' + fees + '</b><br/>' +
+                            "<img alt='" + symbol + "coin image'" + " src='/static/coins/" + symbol + ".png'" + " height='30' width='30'>" +
+                            "<b class='users-list-name'>Total Paid</b>" +
+                            "<span class='users-list-date' id='total" + symbol + "'>0.0 " + symbol + "</span>"
+
+                            + "</li>";
+
+                        $("#payoutCoins").append(coinHtml);
+
+                        $.getJSON("/api/gettotalpaid/" + symbol, function (total) {
+
+                            $("#total" + symbol).html(parseFloat(total).toFixed(5) + " " + symbol);
+
+                        });
+                    };
+
+
+                    // $("#coinCount").html(totalcoins + " coins you can choose for mining payouts");
+
+
+                });
+
+
+
+            });
+
+        </script>
+
+        <script type="text/javascript">
+            $(document).ready(function () {
+
+
+
+                $.getJSON("/api/getblocksstats", function (data) {
+
+
+
+                    for (var block in data) {
+                        var symbol = block.split("-")[0];
+
+                        var valPart = data[block].split(":");
+
+                        var blockHash = valPart[0];
+                        var txHash = valPart[1];
+                        var height = valPart[2];
+                        var finder = valPart[3];
+                        var coinbase = valPart[5];
+                        var status = valPart[6];
+                        var reward = Number(coinbase) / 100000000;
+
+
+                        var rawHtml = '<td>' + '<img src="/static/coins/' + symbol.replace("-sha", "").replace("-scrypt", "").replace("-x11", "") + '.png" />' + '</td>';
+                        rawHtml = rawHtml + '<td> <span class="label label-primary">' + height + '</span></td>'
+                        rawHtml = rawHtml + '<td>' + '<a target=_blank href=https://chainz.cryptoid.info/' + symbol.toLowerCase() + '/tx.dws?' + txHash + '.htm>' + txHash.substring(0, 8) + '</a></td>';
+                        rawHtml = rawHtml + '<td>' + '<a target=_blank href=https://chainz.cryptoid.info/' + symbol.toLowerCase() + '/block.dws?' + blockHash + '.htm>' + blockHash.substring(0, 8) + '</a></td>';
+
+                        rawHtml = rawHtml + '<td>' + finder + '</td>';
+                        if (status == "orphan") {
+                            coinbase = "0.00";
+                        }
+
+                        if (symbol == 'SPRTS') { reward = Number(coinbase) / 1000000; }
+
+                        rawHtml = rawHtml + '<td><span class="label label-success">' + reward + '</span></td>'
+
+
+                        if (status == "generate") {
+                            rawHtml = rawHtml + '<td><span class="label label-success">Confirmed</span></td>'
+                        } else if (status == "orphan" || status == "kicked") {
+                            rawHtml = rawHtml + '<td><span class="label label-danger">Orphaned</span></td>'
+                        }
+                        else {
+                            rawHtml = rawHtml + '<td><span class="label label-warning">Pending</span></td>'
+                        }
+
+
+
+                        rawHtml = '<tr>' + rawHtml + '</tr>';
+
+                        $("#blocks").append(rawHtml);
+
+
+                    }
+
+
+                });
+
+
+
+            });
+
+        </script>

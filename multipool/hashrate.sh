@@ -7,19 +7,25 @@ interval=300
 modifier=65536
 SHAmodifier=4294967296
 redis-cli del tmpkey
+
 while read Algo
 do
         TotalWorkers=0
         WorkerTotals=0
+        
         unset arrWorkerTotals
         unset arrWorkerCounts
         unset arrWorkerNames
+        
         typeset -A arrWorkerTotals
         typeset -A arrWorkerCounts
         typeset -A arrWorkerNames
+        
         AlgoCounter=0
         workercounter=0
+        
         redis-cli del tmpkey
+        
         while read CoinType
         do
                 echo "$CoinType"
@@ -27,6 +33,7 @@ do
                 counter=0
                 CoinKeyName=$CoinType":hashrate"
                 totalhashes=`redis-cli zcard $CoinKeyName`
+                
         if [ -z "$totalhashes" ]
         then
                 echo "no hashes" >/dev/null
@@ -34,11 +41,12 @@ do
                 while read LineItem
                 do
 #                       echo "$LineItem"
-        counter=$(($counter + 1))
+                        counter=$(($counter + 1))
                         AlgoCounter=$(($AlgoCounter + 1))
                         IN=$LineItem
             arrIN=(${IN//:/ })
             preworker=(${arrIN[1]})
+           
             #strip HTML tags out to ensure safe displaying later
             workername=`echo "$preworker," | tr -d '<>,'`
                         echo "$workername"
@@ -106,7 +114,9 @@ fi
                                 TotalHR=`echo "scale=3;$TotalHash * $modifier / $interval / $divisor" | bc`
 #                redis-cli zadd Pool_Stats:avgHR:$Algo $now $TotalHR":"$now
                 #go over the array of WorkerNames and calculate each workers HR
+                                
                                 counterB=0
+                                
                 while [[ $counterB -lt $workercounter ]]
                 do
                         counterB=$(($counterB + 1))

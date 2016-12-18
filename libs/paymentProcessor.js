@@ -9,7 +9,7 @@ var util = require('merged-pooler/lib/util.js');
 
 module.exports = function(logger){
 
-    var poolConfigs = JSON.parse(process.env.pools);
+    var poolConfigs = JSON.parse(process.env.pools1 +process.env.pools2);
 
     var enabledPools = [];
     
@@ -73,6 +73,7 @@ function SetupForPool(logger, poolOptions, setupFinished){
 
 
     var coin = poolOptions.coin.name;
+    var coinSymbol = poolOptions.coin.symbol;
     var processingConfig = poolOptions.paymentProcessing;
 
     var logSystem = 'Payments';
@@ -252,16 +253,16 @@ function SetupForPool(logger, poolOptions, setupFinished){
                             round.category = 'kicked';
                             return;
                         }
-                        else if (!tx.result.details || (tx.result.details && tx.result.details.length === 0)){
-                            logger.debug(logSystem, logComponent, 'Daemon reports no details for transaction: ' + round.txHash);
-                            round.category = 'kicked';
-                            return;
-                        }
-                        else if (tx.error || !tx.result){
+                        else if (tx.error || tx.result == null) {
                             logger.error(logSystem, logComponent, 'Odd error with gettransaction ' + round.txHash + ' '
                                 + JSON.stringify(tx));
                             return;
                         }
+                        else if (tx.result.details == null || (tx.result.details && tx.result.details.length === 0)) {
+                                                        logger.debug(logSystem, logComponent, 'Daemon reports no details for transaction: ' + round.txHash);
+                                                       round.category = 'kicked';
+                                                        return;
+                                     }
 
                         var generationTx = tx.result.details.filter(function(tx){
                             return tx.address === poolOptions.address;
@@ -484,7 +485,7 @@ logger.info(logSystem, logComponent, addressAmounts);
                 }
 
 
-
+                var updateBlockStatCommands = [];
                 var movePendingCommands = [];
                 var roundsToDelete = [];
                 var orphanMergeCommands = [];
@@ -493,32 +494,42 @@ logger.info(logSystem, logComponent, addressAmounts);
                     var workerShares = r.workerShares;
                     Object.keys(workerShares).forEach(function(worker){
                         orphanMergeCommands.push(['hincrby', coin + ':shares:roundCurrent',
-                            worker, workerShares[worker]]);
++worker, workerShares[worker]]);
                     });
                 };
+                
+                //update blocks stat for all coins
+                rounds.forEach(function (r) {
 
-                rounds.forEach(function(r){
+                    updateBlockStatCommands.push(['hset', 'Allblocks', coinSymbol +"-"+ r.height, r.serialized + ":" + r.category]);
+                    
+
+                });
+                
+
+                rounds.forEach(function(r){                   
 
                     switch(r.category){
-                        case 'kicked':
-                            movePendingCommands.push(['smove', coin + ':blocksPending', coin + ':blocksKicked', r.serialized]);
-                        case 'orphan':
-                            movePendingCommands.push(['smove', coin + ':blocksPending', coin + ':blocksOrphaned', r.serialized]);
-                            if (r.canDeleteShares){
-                                moveSharesToCurrent(r);
-                                roundsToDelete.push(coin + ':shares:round' + r.height);
-                            }
-                            return;
-                        case 'generate':
-                            movePendingCommands.push(['smove', coin + ':blocksPending', coin + ':blocksConfirmed', r.serialized]);
-                            roundsToDelete.push(coin + ':shares:round' + r.height);
-                            return;
-                    }
+                                                case 'kicked':
+                                                    movePendingCommands.push(['smove', coin + ':blocksPending', coin + ':blocksOrphaned', r.serialized]);
+                                                case 'orphan':
+                                                    movePendingCommands.push(['smove', coin + ':blocksPending', coin + ':blocksOrphaned', r.serialized]);
+                                                   if (r.canDeleteShares){
+                                                           moveSharesToCurrent(r);
+                                                           roundsToDelete.push(coin + ':shares:round' + r.height);
+                                                       }
+                                                    return;
+                                                case 'generate':
+                                                    movePendingCommands.push(['smove', coin + ':blocksPending', coin + ':blocksConfirmed', r.serialized]);
+                    roundsToDelete.push(coin + ':shares:round' + r.height);
 
+                    return;
+                    }
                 });
 
                 var finalRedisCommands = [];
-
+                
+                
                 if (movePendingCommands.length > 0)
                     finalRedisCommands = finalRedisCommands.concat(movePendingCommands);
 
@@ -530,6 +541,9 @@ logger.info(logSystem, logComponent, addressAmounts);
 
                 if (workerPayoutsCommand.length > 0)
                     finalRedisCommands = finalRedisCommands.concat(workerPayoutsCommand);
+                
+                if (updateBlockStatCommands.length > 0)
+                    finalRedisCommands = finalRedisCommands.concat(updateBlockStatCommands);
 
                 if (roundsToDelete.length > 0)
                     finalRedisCommands.push(['del'].concat(roundsToDelete));

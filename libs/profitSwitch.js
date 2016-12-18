@@ -9,6 +9,8 @@ var Cryptsy  = require('./apiCryptsy.js');
 var Poloniex = require('./apiPoloniex.js');
 var Mintpal  = require('./apiMintpal.js');
 var Bittrex  = require('./apiBittrex.js');
+var Yobit = require('./apiYobit.js');
+var Ccex = require('./apiCcex.js');
 var Stratum  = require('merged-pooler');
 
 module.exports = function(logger){
@@ -16,7 +18,7 @@ module.exports = function(logger){
     var _this = this;
 
     var portalConfig = JSON.parse(process.env.portalConfig);
-    var poolConfigs = JSON.parse(process.env.pools);
+    var poolConfigs = JSON.parse(process.env.pools1 + process.env.pools2);
 
     var logSystem = 'Profit';
 
@@ -59,6 +61,9 @@ module.exports = function(logger){
                 reward: 0,
                 exchangeInfo: {}
             };
+
+
+
             profitStatus[algo][poolConfig.coin.symbol] = coinStatus;
             symbolToAlgorithmMap[poolConfig.coin.symbol] = algo;
         });
@@ -109,7 +114,342 @@ module.exports = function(logger){
         // 'API_KEY',
         // 'API_SECRET'
     );
+    var yobitApi =  new Yobit(
+        // 'API_KEY',
+        // 'API_SECRET'
+    );
 
+    var cCexApi = new Ccex(
+        // 'API_KEY',
+        // 'API_SECRET'
+    );
+   
+
+
+
+
+
+
+
+
+    this.getProfitDataCcex = function (callback) {
+        async.series([
+            function (taskCallback) {
+                cCexApi.getTicker(function (err, response) {
+                    if (err || !response.result) {
+                        taskCallback(err);
+                        return;
+                    }
+
+                    Object.keys(symbolToAlgorithmMap).forEach(function (symbol) {
+                       
+                        response.result.forEach(function (market) {
+
+                            var exchangeInfo = profitStatus[symbolToAlgorithmMap[symbol]][symbol].exchangeInfo;
+
+                            var tempsymbol = "";
+                            if (symbol.indexOf("-") > -1) {
+                                tempsymbol = symbol.split("-")[0]; //for multi-algo profit switch support    
+                            } else {
+                                tempsymbol = symbol;
+                            }
+
+                            if (!exchangeInfo.hasOwnProperty('cCex'))
+                                exchangeInfo['cCex'] = {};
+
+                            var marketData = exchangeInfo['cCex'];
+                            var marketPair = market.MarketName.match(/([\w]+)-([\w-_]+)/)
+                            market.code = marketPair[1]
+                            market.exchange = marketPair[2]
+                            if (market.exchange == 'BTC' && market.code == tempsymbol) {
+                                if (!marketData.hasOwnProperty('BTC'))
+                                    marketData['BTC'] = {};
+
+                                marketData['BTC'].last = new Number(market.Last);
+                                marketData['BTC'].baseVolume = new Number(market.BaseVolume);
+                                marketData['BTC'].quoteVolume = new Number(market.BaseVolume / market.Last);
+                                marketData['BTC'].ask = new Number(market.Ask);
+                                marketData['BTC'].bid = new Number(market.Bid);
+                            }
+
+                            if (market.exchange == 'LTC' && market.code == tempsymbol) {
+                                if (!marketData.hasOwnProperty('LTC'))
+                                    marketData['LTC'] = {};
+
+                                marketData['LTC'].last = new Number(market.Last);
+                                marketData['LTC'].baseVolume = new Number(market.BaseVolume);
+                                marketData['LTC'].quoteVolume = new Number(market.BaseVolume / market.Last);
+                                marketData['LTC'].ask = new Number(market.Ask);
+                                marketData['LTC'].bid = new Number(market.Bid);
+                            }
+
+                        });
+                    });
+                    taskCallback();
+                });
+            },
+            function (taskCallback) {
+                var depthTasks = [];
+                Object.keys(symbolToAlgorithmMap).forEach(function (symbol) {
+                  
+
+
+                    var marketData = profitStatus[symbolToAlgorithmMap[symbol]][symbol].exchangeInfo['cCex'];
+
+                   
+
+                    if (marketData.hasOwnProperty('BTC') && marketData['BTC'].bid > 0) {
+                        depthTasks.push(function (callback) {
+                            _this.getMarketDepthFromCcex('BTC', symbol, marketData['BTC'].bid, callback)
+                        });
+                    }
+                    if (marketData.hasOwnProperty('LTC') && marketData['LTC'].bid > 0) {
+                        depthTasks.push(function (callback) {
+                            _this.getMarketDepthFromCcex('LTC', symbol, marketData['LTC'].bid, callback)
+                        });
+                    }
+                });
+
+                if (!depthTasks.length) {
+                    taskCallback();
+                    return;
+                }
+                async.series(depthTasks, function (err) {
+                    if (err) {
+                        taskCallback(err);
+                        return;
+                    }
+                    taskCallback();
+                });
+            }
+        ], function (err) {
+            if (err) {
+                callback(err);
+                return;
+            }
+            callback(null);
+        });
+    };
+    this.getMarketDepthFromCcex = function (symbolA, symbolB, coinPrice, callback) {
+
+        var tempB = "";
+        if (symbolB.indexOf("-") > -1) {
+            tempB = symbolB.split("-")[0]; //for multi-algo profit switch support
+        } else {
+            tempB = symbolB;
+        }
+
+
+
+        cCexApi.getOrderBook(symbolA, tempB, function (err, response) {
+            if (err) {
+                callback(err);
+                return;
+            }
+            var depth = new Number(0);
+            if (response.hasOwnProperty('result') && response['result'] != null) {
+                var totalQty = new Number(0);
+                response['result'].buy.forEach(function (order) {
+                    var price = new Number(order.Rate);
+                    var limit = new Number(coinPrice * portalConfig.profitSwitch.depth);
+                    var qty = new Number(order.Quantity);
+                    // only measure the depth down to configured depth
+                    if (price >= limit) {
+                        depth += (qty * price);
+                        totalQty += qty;
+                    }
+                });
+            }
+
+            var marketData = profitStatus[symbolToAlgorithmMap[symbolB]][symbolB].exchangeInfo['cCex'];
+
+
+            marketData[symbolA].depth = depth;
+            if (totalQty > 0)
+                marketData[symbolA].weightedBid = new Number(depth / totalQty);
+            callback();
+        });
+    };
+
+
+
+
+
+
+
+
+
+
+
+
+   
+
+    this.getProfitDataYobit = function(callback){
+        async.series([
+            function(taskCallback){
+
+                var tickers=[];
+
+                Object.keys(symbolToAlgorithmMap).forEach(function(symbol){
+                    symbol = symbol.toLowerCase();
+
+                    var tempsymbol = "";
+                    if (symbol.indexOf("-") > -1) {
+                        tempsymbol = symbol.split("-")[0]; //for multi-algo profit switch support    
+                    } else {
+                        tempsymbol = symbol;
+                    }
+
+
+                    tickers.push(tempsymbol + "_btc");
+                   // tickers.push(tempsymbol+"_ltc");
+                });
+
+                var tickerStr=tickers.join("-").toLowerCase();
+
+                yobitApi.getTickerFor(function(err, data){
+                    if (err){
+                        taskCallback(err);
+                        return;
+                    }
+
+                    Object.keys(symbolToAlgorithmMap).forEach(function (symbol) {
+                        
+
+                        var exchangeInfo = profitStatus[symbolToAlgorithmMap[symbol]][symbol].exchangeInfo;
+
+                      
+                        symbol = symbol.toLowerCase();
+
+                        var tempsymbol = "";
+                        if (symbol.indexOf("-") > -1) {
+                            tempsymbol = symbol.split("-")[0]; //for multi-algo profit switch support    
+                        } else {
+                            tempsymbol = symbol;
+                        }
+
+
+
+
+                        if (!exchangeInfo.hasOwnProperty('Yobit'))
+                            exchangeInfo['Yobit'] = {};
+                        var marketData = exchangeInfo['Yobit'];
+
+                        if (data.hasOwnProperty( tempsymbol+'_btc')) {
+                            if (!marketData.hasOwnProperty('BTC'))
+                                marketData['BTC'] = {};
+
+                            var btcData = data[tempsymbol+'_btc'];
+                            marketData['BTC'].ask = new Number(btcData.sell);
+                            marketData['BTC'].bid = new Number(btcData.buy);
+                            marketData['BTC'].last = new Number(btcData.last);
+                            marketData['BTC'].baseVolume = new Number(btcData.vol);
+                            marketData['BTC'].quoteVolume = new Number(btcData.vol_cur);
+                        }
+                        if (data.hasOwnProperty(tempsymbol+'_ltc')) {
+                            if (!marketData.hasOwnProperty('LTC'))
+                                marketData['LTC'] = {};
+
+                            var ltcData = data[ tempsymbol+'_ltc'];
+                            marketData['LTC'].ask = new Number(ltcData.sell);
+                            marketData['LTC'].bid = new Number(ltcData.buy);
+                            marketData['LTC'].last = new Number(ltcData.last);
+                            marketData['LTC'].baseVolume = new Number(ltcData.vol);
+                            marketData['LTC'].quoteVolume = new Number(ltcData.vol_cur);
+                        }
+                        // save LTC to BTC exchange rate
+                        if (marketData.hasOwnProperty('LTC') && data.hasOwnProperty('ltc_btc')) {
+                            var btcLtc = data['ltc_btc'];
+                            marketData['LTC'].ltcToBtc = new Number(btcLtc.highestBid);
+                        }
+                    });
+
+                    taskCallback();
+                },tickerStr);
+            },
+            function(taskCallback){
+                var depthTasks = [];
+                Object.keys(symbolToAlgorithmMap).forEach(function (symbol) {
+
+                    
+
+                    var marketData = profitStatus[symbolToAlgorithmMap[symbol]][symbol].exchangeInfo['Yobit'];
+
+
+                   
+
+
+                    if (marketData.hasOwnProperty('BTC') && marketData['BTC'].bid > 0) {
+                        depthTasks.push(function(callback){
+                            _this.getMarketDepthFromYobit('BTC', symbol, marketData['BTC'].bid, callback) 
+                        });
+                    }
+                    if (marketData.hasOwnProperty('LTC') && marketData['LTC'].bid > 0){
+                        depthTasks.push(function(callback){
+                            _this.getMarketDepthFromYobit('LTC', symbol, marketData['LTC'].bid, callback) 
+                        });
+                    }
+                });
+
+                if (!depthTasks.length){
+                    taskCallback();
+                    return;
+                }
+                async.series(depthTasks, function(err){
+                    if (err){
+                        taskCallback(err);
+                        return;
+                    }
+                    taskCallback();
+                });
+            }
+        ], function(err){
+            if (err){
+                callback(err);
+                return;
+            }
+            callback(null);
+        });
+        
+    };
+    this.getMarketDepthFromYobit = function (symbolA, symbolB, coinPrice, callback) {
+
+        var tempB = "";
+        if (symbolB.indexOf("-") > -1) {
+            tempB = symbolB.split("-")[0]; //for multi-algo profit switch support
+        } else {
+            tempB = symbolB;
+        }
+
+        yobitApi.getOrderBook(symbolA.toLowerCase(), tempB.toLowerCase(), function(err, data){
+            if (err){
+                callback(err);
+                return;
+            }
+            var depth = new Number(0);
+            var totalQty = new Number(0);
+            if (data.hasOwnProperty(tempB.toLowerCase()+"_"+symbolA.toLowerCase())) {
+                data[tempB.toLowerCase()+"_"+symbolA.toLowerCase()]['bids'].forEach(function(order){
+                    var price = new Number(order[0]);
+                    var limit = new Number(coinPrice * portalConfig.profitSwitch.depth);
+                    var qty = new Number(order[1]);
+                    // only measure the depth down to configured depth
+                    if (price >= limit){
+                        depth += (qty * price);
+                        totalQty += qty;
+                    }
+                });
+            }
+
+            var marketData = profitStatus[symbolToAlgorithmMap[symbolB]][symbolB].exchangeInfo['Yobit'];
+            marketData[symbolA].depth = depth;
+            if (totalQty > 0)
+                marketData[symbolA].weightedBid = new Number(depth / totalQty);
+            callback();
+        });
+    };
+
+    
     // 
     // market data collection from Poloniex
     //
@@ -122,28 +462,40 @@ module.exports = function(logger){
                         return;
                     }
 
-                    Object.keys(symbolToAlgorithmMap).forEach(function(symbol){
+                    Object.keys(symbolToAlgorithmMap).forEach(function (symbol) {
+
+                      
+
+
                         var exchangeInfo = profitStatus[symbolToAlgorithmMap[symbol]][symbol].exchangeInfo;
+
+                        var tempsymbol = "";
+                        if (symbol.indexOf("-") > -1) {
+                            tempsymbol = symbol.split("-")[0]; //for multi-algo profit switch support    
+                        } else {
+                            tempsymbol = symbol;
+                        }
+
                         if (!exchangeInfo.hasOwnProperty('Poloniex'))
                             exchangeInfo['Poloniex'] = {};
                         var marketData = exchangeInfo['Poloniex'];
 
-                        if (data.hasOwnProperty('BTC_' + symbol)) {
+                        if (data.hasOwnProperty('BTC_' + tempsymbol)) {
                             if (!marketData.hasOwnProperty('BTC'))
                                 marketData['BTC'] = {};
 
-                            var btcData = data['BTC_' + symbol];
+                            var btcData = data['BTC_' + tempsymbol];
                             marketData['BTC'].ask = new Number(btcData.lowestAsk);
                             marketData['BTC'].bid = new Number(btcData.highestBid);
                             marketData['BTC'].last = new Number(btcData.last);
                             marketData['BTC'].baseVolume = new Number(btcData.baseVolume);
                             marketData['BTC'].quoteVolume = new Number(btcData.quoteVolume);
                         }
-                        if (data.hasOwnProperty('LTC_' + symbol)) {
+                        if (data.hasOwnProperty('LTC_' + tempsymbol)) {
                             if (!marketData.hasOwnProperty('LTC'))
                                 marketData['LTC'] = {};
 
-                            var ltcData = data['LTC_' + symbol];
+                            var ltcData = data['LTC_' + tempsymbol];
                             marketData['LTC'].ask = new Number(ltcData.lowestAsk);
                             marketData['LTC'].bid = new Number(ltcData.highestBid);
                             marketData['LTC'].last = new Number(ltcData.last);
@@ -162,9 +514,16 @@ module.exports = function(logger){
             },
             function(taskCallback){
                 var depthTasks = [];
-                Object.keys(symbolToAlgorithmMap).forEach(function(symbol){
+                Object.keys(symbolToAlgorithmMap).forEach(function (symbol) {
+
+                  
+
                     var marketData = profitStatus[symbolToAlgorithmMap[symbol]][symbol].exchangeInfo['Poloniex'];
-                    if (marketData.hasOwnProperty('BTC') && marketData['BTC'].bid > 0){
+
+                  
+
+
+                    if (marketData.hasOwnProperty('BTC') && marketData['BTC'].bid > 0) {
                         depthTasks.push(function(callback){
                             _this.getMarketDepthFromPoloniex('BTC', symbol, marketData['BTC'].bid, callback) 
                         });
@@ -198,7 +557,18 @@ module.exports = function(logger){
         
     };
     this.getMarketDepthFromPoloniex = function(symbolA, symbolB, coinPrice, callback){
-        poloApi.getOrderBook(symbolA, symbolB, function(err, data){
+
+
+        var tempB = "";
+        if (symbolB.indexOf("-") > -1) {
+            tempB = symbolB.split("-")[0]; //for multi-algo profit switch support
+        } else {
+            tempB = symbolB;
+        }
+
+
+
+        poloApi.getOrderBook(symbolA, tempB, function (err, data) {
             if (err){
                 callback(err);
                 return;
@@ -236,19 +606,29 @@ module.exports = function(logger){
                         return;
                     }
 
-                    Object.keys(symbolToAlgorithmMap).forEach(function(symbol){
+                    Object.keys(symbolToAlgorithmMap).forEach(function (symbol) {
+                        
+
                         var exchangeInfo = profitStatus[symbolToAlgorithmMap[symbol]][symbol].exchangeInfo;
+
+                        var tempsymbol = "";
+                        if (symbol.indexOf("-") > -1) {
+                            tempsymbol = symbol.split("-")[0]; //for multi-algo profit switch support    
+                        } else {
+                            tempsymbol = symbol;
+                        }
+
                         if (!exchangeInfo.hasOwnProperty('Cryptsy'))
                             exchangeInfo['Cryptsy'] = {};
 
                         var marketData = exchangeInfo['Cryptsy'];
                         var results    = data.return.markets;
 
-                        if (results && results.hasOwnProperty(symbol + '/BTC')) {
+                        if (results && results.hasOwnProperty(tempsymbol + '/BTC')) {
                             if (!marketData.hasOwnProperty('BTC'))
                                 marketData['BTC'] = {};
 
-                            var btcData = results[symbol + '/BTC'];
+                            var btcData = results[tempsymbol + '/BTC'];
                             marketData['BTC'].last = new Number(btcData.lasttradeprice);
                             marketData['BTC'].baseVolume = new Number(marketData['BTC'].last / btcData.volume);
                             marketData['BTC'].quoteVolume = new Number(btcData.volume);
@@ -273,11 +653,11 @@ module.exports = function(logger){
                            }
                         }
 
-                        if (results && results.hasOwnProperty(symbol + '/LTC')) {
+                        if (results && results.hasOwnProperty(tempsymbol + '/LTC')) {
                             if (!marketData.hasOwnProperty('LTC'))
                                 marketData['LTC'] = {};
 
-                            var ltcData = results[symbol + '/LTC'];
+                            var ltcData = results[tempsymbol + '/LTC'];
                             marketData['LTC'].last = new Number(ltcData.lasttradeprice);
                             marketData['LTC'].baseVolume = new Number(marketData['LTC'].last / ltcData.volume);
                             marketData['LTC'].quoteVolume = new Number(ltcData.volume);
@@ -325,15 +705,30 @@ module.exports = function(logger){
                         return;
                     }
 
-                    Object.keys(symbolToAlgorithmMap).forEach(function(symbol){
+                    Object.keys(symbolToAlgorithmMap).forEach(function (symbol) {
+
+                        
+
+
+
                         response.data.forEach(function(market){
                             var exchangeInfo = profitStatus[symbolToAlgorithmMap[symbol]][symbol].exchangeInfo;
+
+
+
+                            var tempsymbol = "";
+                            if (symbol.indexOf("-") > -1) {
+                                tempsymbol = symbol.split("-")[0]; //for multi-algo profit switch support    
+                            } else {
+                                tempsymbol = symbol;
+                            }
+
                             if (!exchangeInfo.hasOwnProperty('Mintpal'))
                                 exchangeInfo['Mintpal'] = {};
 
                             var marketData = exchangeInfo['Mintpal'];
 
-                            if (market.exchange == 'BTC' && market.code == symbol) {
+                            if (market.exchange == 'BTC' && market.code == tempsymbol) {
                                 if (!marketData.hasOwnProperty('BTC'))
                                     marketData['BTC'] = {};
 
@@ -344,7 +739,7 @@ module.exports = function(logger){
                                 marketData['BTC'].bid = new Number(market.top_bid);
                             }
 
-                            if (market.exchange == 'LTC' && market.code == symbol) {
+                            if (market.exchange == 'LTC' && market.code == tempsymbol) {
                                 if (!marketData.hasOwnProperty('LTC'))
                                     marketData['LTC'] = {};
 
@@ -362,9 +757,17 @@ module.exports = function(logger){
             },
             function(taskCallback){
                 var depthTasks = [];
-                Object.keys(symbolToAlgorithmMap).forEach(function(symbol){
+                Object.keys(symbolToAlgorithmMap).forEach(function (symbol) {
+
+                   
+
+
                     var marketData = profitStatus[symbolToAlgorithmMap[symbol]][symbol].exchangeInfo['Mintpal'];
-                    if (marketData.hasOwnProperty('BTC') && marketData['BTC'].bid > 0){
+
+                   
+
+
+                    if (marketData.hasOwnProperty('BTC') && marketData['BTC'].bid > 0) {
                         depthTasks.push(function(callback){
                             _this.getMarketDepthFromMintpal('BTC', symbol, marketData['BTC'].bid, callback) 
                         });
@@ -396,8 +799,18 @@ module.exports = function(logger){
             callback(null);
         });
     };
+
     this.getMarketDepthFromMintpal = function(symbolA, symbolB, coinPrice, callback){
-        mintpalApi.getBuyOrderBook(symbolA, symbolB, function(err, response){
+
+
+        var tempB = "";
+        if (symbolB.indexOf("-") > -1) {
+            tempB = symbolB.split("-")[0]; //for multi-algo profit switch support
+        } else {
+            tempB = symbolB;
+        }
+
+        mintpalApi.getBuyOrderBook(symbolA, tempB, function (err, response) {
             if (err){
                 callback(err);
                 return;
@@ -435,9 +848,24 @@ module.exports = function(logger){
                         return;
                     }
 
-                    Object.keys(symbolToAlgorithmMap).forEach(function(symbol){
+                    Object.keys(symbolToAlgorithmMap).forEach(function (symbol) {
+
+                        
+
                         response.result.forEach(function(market){
+
+
+
                             var exchangeInfo = profitStatus[symbolToAlgorithmMap[symbol]][symbol].exchangeInfo;
+
+                            var tempsymbol = "";
+                            if (symbol.indexOf("-") > -1) {
+                                tempsymbol = symbol.split("-")[0]; //for multi-algo profit switch support    
+                            } else {
+                                tempsymbol = symbol;
+                            }
+
+
                             if (!exchangeInfo.hasOwnProperty('Bittrex'))
                                 exchangeInfo['Bittrex'] = {};
 
@@ -445,7 +873,7 @@ module.exports = function(logger){
                             var marketPair = market.MarketName.match(/([\w]+)-([\w-_]+)/)
                             market.exchange = marketPair[1]
                             market.code = marketPair[2]
-                            if (market.exchange == 'BTC' && market.code == symbol) {
+                            if (market.exchange == 'BTC' && market.code == tempsymbol) {
                                 if (!marketData.hasOwnProperty('BTC'))
                                     marketData['BTC'] = {};
 
@@ -456,7 +884,7 @@ module.exports = function(logger){
                                 marketData['BTC'].bid = new Number(market.Bid);
                             }
 
-                            if (market.exchange == 'LTC' && market.code == symbol) {
+                            if (market.exchange == 'LTC' && market.code == tempsymbol) {
                                 if (!marketData.hasOwnProperty('LTC'))
                                     marketData['LTC'] = {};
 
@@ -474,9 +902,17 @@ module.exports = function(logger){
             },
             function(taskCallback){
                 var depthTasks = [];
-                Object.keys(symbolToAlgorithmMap).forEach(function(symbol){
+                Object.keys(symbolToAlgorithmMap).forEach(function (symbol) {
+
+                   
+
+
                     var marketData = profitStatus[symbolToAlgorithmMap[symbol]][symbol].exchangeInfo['Bittrex'];
-                    if (marketData.hasOwnProperty('BTC') && marketData['BTC'].bid > 0){
+
+
+                  
+
+                    if (marketData.hasOwnProperty('BTC') && marketData['BTC'].bid > 0) {
                         depthTasks.push(function(callback){
                             _this.getMarketDepthFromBittrex('BTC', symbol, marketData['BTC'].bid, callback) 
                         });
@@ -508,8 +944,16 @@ module.exports = function(logger){
             callback(null);
         });
     };
-    this.getMarketDepthFromBittrex = function(symbolA, symbolB, coinPrice, callback){
-        bittrexApi.getOrderBook(symbolA, symbolB, function(err, response){
+    this.getMarketDepthFromBittrex = function (symbolA, symbolB, coinPrice, callback) {
+
+        var tempB = "";
+        if (symbolB.indexOf("-") > -1) {
+            tempB = symbolB.split("-")[0]; //for multi-algo profit switch support
+        } else {
+            tempB = symbolB;
+        }
+        
+        bittrexApi.getOrderBook(symbolA, tempB, function(err, response){
             if (err){
                 callback(err);
                 return;
@@ -569,7 +1013,7 @@ module.exports = function(logger){
             callback(null); // fail gracefully for each coin
         });
 
-        daemon.cmd('getblocktemplate', [{"capabilities": [ "coinbasetxn", "workid", "coinbase/append" ]}], function(result) {
+        daemon.cmd('getblocktemplate', [{ 'mode': 'template',"capabilities": ["coinbasetxn", "workid", "coinbase/append"] }], function (result) {
             if (result[0].error != null) {
                 logger.error(logSystem, symbol, 'Error while reading daemon info: ' + JSON.stringify(result[0]));
                 callback(null); // fail gracefully for each coin
@@ -591,8 +1035,12 @@ module.exports = function(logger){
 	    else if (coinStatus.name == 'legendarycoin'){coinStatus.reward = response.coinbasevalue / 1000000;}
 	    else if (coinStatus.name == 'novacoin'){coinStatus.reward = response.coinbasevalue / 1000000;}
 	    else if (coinStatus.name == 'tagcoin'){coinStatus.reward = response.coinbasevalue / 1000000;}
-
-
+	    else if (coinStatus.name == 'sproutscoin') { coinStatus.reward = response.coinbasevalue / 1000000; }
+	    else if (coinStatus.name == 'neucoin') { coinStatus.reward = response.coinbasevalue / 1000000; }
+	    else if (coinStatus.name == 'emercoin') { coinStatus.reward = response.coinbasevalue / 1000000; }
+else if (coinStatus.name == 'curecoin') { coinStatus.reward = response.coinbasevalue / 1000000; }
+else if (coinStatus.name == 'alpacoin') { coinStatus.reward = response.coinbasevalue / 100000; }
+	    
 
             else{coinStatus.reward = response.coinbasevalue / 100000000;}
             callback(null);
@@ -624,8 +1072,14 @@ module.exports = function(logger){
             var bestCoin;
             var bestBtcPerMhPerHour = 0;
 
-            Object.keys(profitStatus[algo]).forEach(function(symbol) {
+            Object.keys(profitStatus[algo]).forEach(function (symbol) {
+              
+               
+
+
                 var coinStatus = profitStatus[algo][symbol];
+
+               
 
                 Object.keys(coinStatus.exchangeInfo).forEach(function(exchange){
                     var exchangeData = coinStatus.exchangeInfo[exchange];
@@ -677,6 +1131,15 @@ module.exports = function(logger){
         logger.warn(logSystem, 'Check', 'Collecting profitability data.');
 
         profitabilityTasks = [];
+
+
+        if (portalConfig.profitSwitch.useCcex)
+            profitabilityTasks.push(_this.getProfitDataCcex);
+
+        if (portalConfig.profitSwitch.useYobit)
+            profitabilityTasks.push(_this.getProfitDataYobit);
+
+
         if (portalConfig.profitSwitch.usePoloniex)
             profitabilityTasks.push(_this.getProfitDataPoloniex);
 

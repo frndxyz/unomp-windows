@@ -1,0 +1,5 @@
+{
+    "name": "Richcoin-scrypt",
+    "symbol": "RICHX-scrypt",
+    "algorithm": "scrypt"
+}

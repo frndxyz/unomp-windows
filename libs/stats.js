@@ -17,92 +17,92 @@ function rediscreateClient(port, host, pass, db) {
 }
 
 
-module.exports = function(logger, portalConfig, poolConfigs){
-
+module.exports = function (logger, portalConfig, poolConfigs) {
+    
     var _this = this;
-
+    
     var logSystem = 'Stats';
-
+    
     var redisClients = [];
     fubar = [];
-
+    
     var redisStats;
-
+    
     this.statHistory = [];
     this.statPoolHistory = [];
     this.statAlgoHistory = [];
-
+    
     this.stats = {};
     this.statsString = '';
-
+    
     setupStatsRedis();
     gatherStatHistory();
-
+    
     var canDoStats = true;
-
-    Object.keys(poolConfigs).forEach(function(coin){
-fubar.push(coin);
+    
+    Object.keys(poolConfigs).forEach(function (coin) {
+        fubar.push(coin);
         if (!canDoStats) return;
-
+        
         var poolConfig = poolConfigs[coin];
-
+        
         var redisConfig = poolConfig.redis;
-
-        for (var i = 0; i < redisClients.length; i++){
+        
+        for (var i = 0; i < redisClients.length; i++) {
             var client = redisClients[i];
-            if (client.client.port === redisConfig.port && client.client.host === redisConfig.host){
-		logger.debug(logSystem, 'Global', 'coin load [' + coin + ']');
+            if (client.client.port === redisConfig.port && client.client.host === redisConfig.host) {
+                logger.debug(logSystem, 'Global', 'coin load [' + coin + ']');
                 client.coins.push(coin);
                 return;
             }
         }
         redisClients.push({
             coins: [coin],
-//          client: redis.createClient(redisConfig.port, redisConfig.host)
-//            client: rediscreateClient(redisConfig.port, redisConfig.host, redisConfig.password)
-            client: rediscreateClient(redisConfig.port, redisConfig.host, redisConfig.password,  redisConfig.db )
+            //          client: redis.createClient(redisConfig.port, redisConfig.host)
+            //            client: rediscreateClient(redisConfig.port, redisConfig.host, redisConfig.password)
+            client: rediscreateClient(redisConfig.port, redisConfig.host, redisConfig.password, redisConfig.db)
         });
     });
-
-    function setupStatsRedis(){
+    
+    function setupStatsRedis() {
         redisStats = redis.createClient(portalConfig.redis.port, portalConfig.redis.host);
-	// logger.debug(logSystem, 'Global', 'redis.Auth1 "' + portalConfig.redis.password + '"');
-	redisStats.auth(portalConfig.redis.password);
-	redisStats.select(portalConfig.redis.db);
-
-        redisStats.on('error', function(err){
+        // logger.debug(logSystem, 'Global', 'redis.Auth1 "' + portalConfig.redis.password + '"');
+        redisStats.auth(portalConfig.redis.password);
+        redisStats.select(portalConfig.redis.db);
+        
+        redisStats.on('error', function (err) {
             logger.error(logSystem, 'Historics', 'Redis for stats had an error ' + JSON.stringify(err));
         });
     }
-
-    function gatherStatHistory(){
-
+    
+    function gatherStatHistory() {
+        
         var retentionTime = (((Date.now() / 1000) - portalConfig.website.stats.historicalRetention) | 0).toString();
-
-        redisStats.zrangebyscore(['statHistory', retentionTime, '+inf'], function(err, replies){
+        
+        redisStats.zrangebyscore(['statHistory', retentionTime, '+inf'], function (err, replies) {
             if (err) {
                 logger.error(logSystem, 'Historics', 'Error when trying to grab historical stats ' + JSON.stringify(err));
                 return;
             }
-            for (var i = 0; i < replies.length; i++){
+            for (var i = 0; i < replies.length; i++) {
                 _this.statHistory.push(JSON.parse(replies[i]));
             }
-            _this.statHistory = _this.statHistory.sort(function(a, b){
+            _this.statHistory = _this.statHistory.sort(function (a, b) {
                 return a.time - b.time;
             });
-            _this.statHistory.forEach(function(stats){
+            _this.statHistory.forEach(function (stats) {
                 addStatPoolHistory(stats);
                 addStatAlgoHistory(stats);
             });
         });
     }
-
-    function addStatPoolHistory(stats){
+    
+    function addStatPoolHistory(stats) {
         var data = {
             time: stats.time,
             pools: {}
         };
-        for (var pool in stats.pools){
+        for (var pool in stats.pools) {
             data.pools[pool] = {
                 hashrate: stats.pools[pool].hashrate,
                 workerCount: stats.pools[pool].workerCount,
@@ -111,13 +111,13 @@ fubar.push(coin);
         }
         _this.statPoolHistory.push(data);
     }
-
-    function addStatAlgoHistory(stats){
+    
+    function addStatAlgoHistory(stats) {
         var data = {
             time: stats.time,
             algos: {}
         };
-        for (var algo in stats.algos){
+        for (var algo in stats.algos) {
             data.algos[algo] = {
                 hashrate: stats.algos[algo].hashrate,
                 workerCount: stats.algos[algo].workerCount,
@@ -125,33 +125,220 @@ fubar.push(coin);
         }
         _this.statAlgoHistory.push(data);
     }
-
-
-this.getCoins = function(cback){
+    
+    
+    this.getCoins = function (cback) {
         _this.stats.coins = redisClients[0].coins;
         cback();
     };
-
-    this.getPayout = function(address, cback){
-
+    
+    this.getPayout = function (address, cback) {
+        
         async.waterfall([
 
-            function(callback){
-
-                _this.getBalanceByAddress(address, function(){
-
+            function (callback) {
+                
+                _this.getBalanceByAddress(address, function () {
+                    
                     callback(null, 'test');
                 });
 
             }
-
-        ], function(err, total){
-
-            cback(total.toFixed());
-
+        ], function (err, total) {
+            
+            //cback(total.toFixed());
+            cback();
         });
     };
+    
+    this.getProxyState = function (algo, cback) {
+        var client = redisClients[0].client;
+        
+        client.hget("proxyState", algo, function (error, data) {
+            if (error) {
+                cback("error");
+                return;
+            }
+            
+            cback(data);
 
+
+        });
+
+
+    }    
+    
+    this.getCurrentProfit = function (algo, cback) {
+        var client = redisClients[0].client;
+        
+         
+        client.hget("Pool_Stats:CurrentShift", "Profitability_" + algo, function (error, data) {
+            if (error) {
+                cback("error");
+                return;
+            }
+            
+            cback(data);    
+
+
+        });   
+     
+    
+        
+    }
+    
+    this.getLastProfit = function (algo, cback) {
+        var client = redisClients[0].client;
+        
+        
+        client.hget("API",algo, function (error, data) {
+            if (error) {
+                cback("error");
+                return;
+            }
+            
+            cback(data);
+
+
+        });   
+        
+    }
+    
+    this.getTotalPaid = function (coin, cback) {
+        var client = redisClients[0].client;
+        
+        
+        client.hget("Worker_Stats:Total"+coin+"Paid", "Total", function (error, data) {
+            if (error) {
+                cback("error");
+                return;
+            }
+            
+            cback(data);
+
+
+        });
+        
+    }
+    
+    this.getPaymentCoins = function (cback) {
+        var client = redisClients[0].client;
+        
+        
+        client.hgetall("paymentCoins", function (error, data) {
+            if (error) {
+                cback("");
+                return;
+            }
+           
+            cback(data);
+
+        });
+
+    }
+    
+    this.getThisShiftEarning = function (address,cback) {
+        var client = redisClients[0].client;
+       
+        var part = address.split(".");
+        if (part.length != 2) {
+            cback("");
+            return;
+        }
+
+        var symbol = part[1].toUpperCase();
+
+        client.hget("Pool_Stats:CurrentShift:Worker" + symbol + "Coin",address, function (error, data) {
+            if (error) {
+                cback("");
+                return;
+            }
+
+            cback(data);
+        });
+
+
+
+    };    
+    
+    this.getWorkerTotalPaid = function (address, cback) {
+        var client = redisClients[0].client;
+        
+        
+        client.hget("Worker_Stats:TotalPaid", address, function (error, data) {
+            if (error) {
+                cback("");
+                return;
+            }
+            
+            cback(data);
+        });
+
+
+
+    };
+    
+    this.getWorkerPendingBalance = function (address, cback) {
+        var client = redisClients[0].client;
+        
+        
+        client.zscore("Pool_Stats:Balances", address, function (error, data) {
+            if (error) {
+                cback("");
+                return;
+            }
+            
+            cback(data);
+        });
+
+
+
+    };
+ 
+    this.getWorkerPastPaid = function (address, cback) {
+        var client = redisClients[0].client;        
+        
+        client.lrange("Worker_Stats:Payouts:"+address,0,7, function (error, data) {
+            if (error) {
+                cback("");
+                return;
+            }
+            
+            cback(data);
+        });
+
+
+
+    };
+    
+    this.getWorkerHashrate = function (algo, address, cback) {
+
+        var client = redisClients[0].client;
+        client.zrange("Pool_Stats:WorkerHRs:" + algo + ":" + address, -1, -1, function (error, data) { 
+            if (error) {
+                cback("");
+                return;
+            }
+
+            cback(data);
+        
+        });
+
+    };
+    
+    this.getBlocksStats = function (cback) {
+        var client = redisClients[0].client;
+        client.hgetall("Allblocks", function (error, data) {
+            if (error) {
+                logger.log("error:-" + error);
+                cback("");
+                return;
+            }
+            
+            cback(data);
+        
+        });
+    };    
 
     this.getBalanceByAddress = function(address, cback){
 
@@ -159,7 +346,7 @@ this.getCoins = function(cback){
             coins = fubar,
             balances = [];
             payouts = [];
-
+            
                     client.hgetall('Payouts:' + address, function(error, txns){
                                                                          //logger.error(logSystem, 'TEMP', 'txnid variable is:' + txnid);
 
@@ -174,7 +361,9 @@ this.getCoins = function(cback){
 
                                                                                }
 
-                                                                        });
+        });
+        
+
         async.each(coins, function(coin, cb){
             client.hget(coin + ':balances', address, function(error, result){
                 if (error){
@@ -199,12 +388,13 @@ this.getCoins = function(cback){
                 balances.push({
                     coin:coin,
                     balance:result,
-		    paid:paid
+		           paid:paid
                 });
                 cb();
             });
             });
-        }, function(err){
+        }, function (err){
+
 if (err){
 console.log('ERROR FROM STATS.JS ' + err);
             cback();
@@ -212,10 +402,10 @@ console.log('ERROR FROM STATS.JS ' + err);
             _this.stats.balances = balances;
             _this.stats.address = address;
             cback();
-}
+            }
+
         });
     };
-
 
     this.getGlobalStats = function(callback){
 
@@ -391,6 +581,126 @@ console.log('ERROR FROM STATS.JS ' + err);
         });
 
     };
+
+    this.getRounds = function (cback) {
+        var client = redisClients[0].client;
+        var allrounds = [];
+
+        client.lrange("Pool_Stats:Rounds", 0, 10, function (error, rounds) {
+            if (error) {
+                logger.log("error:-" + error);
+                cback("");
+                return;
+            }
+            
+           
+            async.each(rounds, function (round, callback) {
+                var details = {};
+
+                
+
+                client.multi([["hget", "Pool_Stats:" + round, "starttime"],
+                    ["hget", "Pool_Stats:" + round, "endtime"],
+                    ["hget", "Pool_Stats:" + round + ":stats", "validShares"],
+                ["hget", "Pool_Stats:" + round + ":stats", "invalidShares"],
+                ["hget", "Pool_Stats:" + round + ":Algos", "Total"]]).exec(function (err, data) {
+
+
+                    if (err) {
+                        callback();
+                        return;
+                    }
+
+                    var starttime = data[0];
+                    var endtime = data[1];
+                    var validShares = data[2];
+                    var invalidShares = data[3];
+                    var totalBtc = data[4];
+
+                    var diff = parseInt(endtime) - parseInt(starttime);
+                    var hours = (diff / 60 / 60);
+
+                    allrounds.push({
+                        roundno: round,
+                        hours: hours,
+                        validshares: validShares,
+                        invalidshares: invalidShares,
+                        totalbtc: totalBtc
+
+                    });
+                    callback();
+                });
+
+                
+
+            }, function (err) {
+                if (err) {
+                    cback(err);
+
+                }
+                else {
+                    cback(allrounds);
+                }
+
+            });
+
+        });
+    };
+
+    this.getRoundDetails=function(round,cback)
+    {
+        var client = redisClients[0].client;
+
+        var workerpaymentdetails = [];
+        var workersharedetails = [];
+
+
+        client.hgetall("Pool_Stats:" + round + ":stats", function (error, data) {
+            if (error) {
+                cback("");
+                return;
+            }
+
+            for (var field in data) {
+                if (field == "validShares" || field == "invalidShares") continue;
+
+                workersharedetails.push({
+                    worker: field,
+                    shares:data[field]
+                });
+
+            };
+       
+        client.hgetall("Pool_Stats:"+round+":Shift", function (error, data) {
+            if(error)
+            {
+                cback("");
+                return;
+            } 
+                
+                for (var worker in data)
+                {
+                    workerpaymentdetails.push({
+                        worker: worker,                       
+                        paid: data[worker]
+
+                    });                    
+                }
+
+            //callback after both details fills
+                cback({
+                    workerpaymentdetails: workerpaymentdetails,
+                    workersharedetails: workersharedetails
+                });
+
+
+        });
+
+        
+
+        });
+
+    }
 
     this.getReadableHashRateString = function(hashrate){
         var i = -1;

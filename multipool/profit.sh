@@ -58,24 +58,34 @@ do
                                 thisEarned=$(echo "scale=8;$thisBalance * $coin2btc" | bc -l)
                                 coinTotal=$(echo "scale=8;$coinTotal + $thisEarned" | bc -l)
                                 AlgoTotal=$(echo "scale=8;$AlgoTotal + $thisEarned" | bc -l)
+                                
                                 OPALCoinEarned=$(echo "scale=8;$thisEarned / $OPALCoinPrice" | bc -l)
+                                
                                 coinTotalOPALCoin=$(echo "scale=8;$coinTotalOPALCoin + $OPALCoinEarned" | bc -l)
                                 AlgoTotalOPALCoin=$(echo "scale=8;$AlgoTotalOPALCoin + $OPALCoinEarned" | bc -l)
+                                
                                echo "$WorkerName earned $OPALCoinEarned from $CoinName"
+                               
 redis-cli hincrbyfloat Pool_Stats:CurrentShift:WorkerOPALCoin "Total" "$OPALCoinEarned"
 redis-cli hincrbyfloat Pool_Stats:CurrentShift:AlgosOPALCoin "Total" "$OPALCoinEarned"
+
 redis-cli hincrbyfloat Pool_Stats:CurrentShift:Algos "Total" "$thisEarned"
 redis-cli hincrbyfloat Pool_Stats:CurrentShift:WorkerOPALCoin "$WorkerName" "$OPALCoinEarned"
+
 redis-cli hincrbyfloat Pool_Stats:CurrentShift:WorkerBtc "Total" "$thisEarned"
 redis-cli hincrbyfloat Pool_Stats:CurrentShift:WorkerBtc "$WorkerName" "$thisEarned"
+
                         done< <(redis-cli hkeys "$CoinName":balances)
+                        
                         redis-cli hset "$logkey" "$CoinName" "$coinTotal"
                         redis-cli hset "$logkeyOPALCoin" "$CoinName" "$coinTotalOPALCoin"
                         #echo "$CoinName: $coinTotal"
 fi
         done< <(redis-cli hkeys Coin_Names_"$line")
+        
         redis-cli hset "$logkey2" "$line" "$AlgoTotal"
         redis-cli hset "$logkey2OPALCoin" "$line" "$AlgoTotalOPALCoin"
+        
 TotalEarned=$(echo "scale=8;$TotalEarned + $AlgoTotal" | bc -l)
 TotalEarnedOPALCoin=$(echo "scale=8;$TotalEarnedOPALCoin + $AlgoTotalOPALCoin" | bc -l)
 

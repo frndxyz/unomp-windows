@@ -1,0 +1,5 @@
+{
+    "name": "alpacoin",
+    "symbol": "APC",
+    "algorithm": "sha256"
+}

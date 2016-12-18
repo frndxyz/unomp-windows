@@ -1,0 +1,5 @@
+{
+    "name": "UniversalCurrency",
+    "symbol": "UNIT",
+    "algorithm": "sha256"
+}

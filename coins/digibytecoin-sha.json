@@ -1,0 +1,5 @@
+{
+    "name": "Digibyte-sha",
+    "symbol": "DGB-sha",
+    "algorithm": "sha256"
+}

@@ -1,0 +1,167 @@
+<div class="row">
+    <div class="col-md-12">
+
+        <div class="box box-primary">
+            <div class="box-header with-border">
+                <h3 class="box-title"> <i class="fa fa-clock-o"></i> Last 10 Payment Rounds (Click to select)</h3>
+                <div class="box-tools pull-right">
+                    <button data-widget="collapse" class="btn btn-box-tool"><i class="fa fa-minus"></i></button>
+                    <button data-widget="remove" class="btn btn-box-tool"><i class="fa fa-times"></i></button>
+                </div>
+            </div>
+            <div class="box-body table-responsive">
+
+                <table class="table table-hover table-striped tablesorter">
+                    <thead>
+                        <tr>
+                            
+                            <th>Round <i class="fa fa-sort"></i></th>
+                            <th><i class='fa fa-clock-o'></i> Time(hours) <i class="fa fa-sort"></i></th>
+                            <th>ValidShares <i class="fa fa-sort"></i></th>
+                            <th>InValidShares <i class="fa fa-sort"></i></th>
+                            <th><i class='fa fa-btc'></i> TotalPaid(BTC) <i class="fa fa-sort"></i></th>
+                        </tr>
+                    </thead>
+                    <tbody id="rounds">
+
+
+
+                    </tbody>
+                </table>
+          
+                   
+              </div><!-- /.box-body -->
+        </div>
+
+
+
+
+
+
+
+        <div class="box box-primary">
+            <div class="box-header with-border">
+                <h3 class="box-title"> <i class="fa fa-btc"></i> Worker Payments</h3>
+                <div class="box-tools pull-right">
+                    <button data-widget="collapse" class="btn btn-box-tool"><i class="fa fa-minus"></i></button>
+                    <button data-widget="remove" class="btn btn-box-tool"><i class="fa fa-times"></i></button>
+                </div>
+            </div>
+            
+
+
+
+            <div class="box-body table-responsive">
+                
+                <div class="alert alert-success" role="alert">Payment is not exact on below worker shares percent. as there may be some unconfirmed block rewards of selected round will be payed in next subsequent round.</div>
+
+
+                <table class="table table-hover table-striped tablesorter">
+                    <thead>
+                        <tr>
+
+                            <th>Worker <i class="fa fa-sort"></i></th>
+                            <th>paid <i class="fa fa-sort"></i></th>
+                        </tr>
+                    </thead>
+                    <tbody id="roundpaymentdetails"></tbody>
+                </table>
+
+
+            </div><!-- /.box-body -->
+        </div>
+
+
+        <div class="box box-primary">
+            <div class="box-header with-border">
+                <h3 class="box-title"> <i class="fa fa-bar-chart-o"></i> Worker Shares</h3>
+                <div class="box-tools pull-right">
+                    <button data-widget="collapse" class="btn btn-box-tool"><i class="fa fa-minus"></i></button>
+                    <button data-widget="remove" class="btn btn-box-tool"><i class="fa fa-times"></i></button>
+                </div>
+            </div>
+            <div class="box-body table-responsive">
+           
+                 <table class="table table-hover table-striped tablesorter">
+                    <thead>
+                        <tr>
+
+                            <th>Worker <i class="fa fa-sort"></i></th>
+                            <th>shares <i class="fa fa-sort"></i></th>
+                        </tr>
+                    </thead>
+                    <tbody id="roundsharedetails"></tbody>
+                </table>
+
+      
+            </div><!-- /.box-body -->
+        </div>
+    </div><!-- /.col (LEFT) -->
+
+</div>
+
+
+<script type="text/javascript">
+            $(document).ready(function () {
+                $.ajaxSetup({
+                    async: false
+                });
+
+                $.getJSON("/api/getrounds", function (data) {
+                    var tblround = $("#rounds");
+                    
+                    $.each(data, function (i, round) {
+
+                        var raw = $("<tr><td>" + round.roundno + "</td><td>" + Number(round.hours).toFixed(2) + "</td><td>" + Number(round.validshares).toFixed(0) + "</td><td>" + Number(round.invalidshares).toFixed(0) + "</td><td>" + Number(round.totalbtc).toFixed(5) + "</td></tr>");
+
+                        raw.click(function () {
+
+
+                            $.getJSON("/api/getrounddetails/" + round.roundno, function (data) {
+                                var tblroundpaymentdetails = $("#roundpaymentdetails");
+                                var tblroundsharedetails = $("#roundsharedetails");
+
+                                tblroundpaymentdetails.html("");
+                                tblroundsharedetails.html("");
+
+                                var roundpaymentdetails = data.workerpaymentdetails;
+                                var roundsharedetails = data.workersharedetails;
+                                
+                                //fill share table
+                                $.each(roundsharedetails, function (i, rounddetail) {
+
+
+                                    var raw = $("<tr><td>" + rounddetail.worker + "</td><td>" + Number(rounddetail.shares).toFixed(4) + "</td></tr>");
+                                    tblroundsharedetails.append(raw);
+
+                                });
+
+                                //fill payment table
+                                $.each(roundpaymentdetails, function (i, rounddetail) {
+                                    var part = rounddetail.worker.split(".");
+                                    var symbol = part[1];
+
+                                    var raw = $("<tr><td>" + rounddetail.worker + "</td><td>" + Number(rounddetail.paid).toFixed(5) + " " + symbol.toUpperCase() +  " </td></tr>");
+                                    tblroundpaymentdetails.append(raw);
+
+                                });
+
+
+                            });
+
+
+
+
+                           
+                        });
+
+                        tblround.append(raw);
+                    });
+
+                });
+           
+
+
+
+            });
+</script>

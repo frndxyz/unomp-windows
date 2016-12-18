@@ -1,0 +1,5 @@
+{
+    "name": "myriad-sha",
+    "symbol": "MYR-sha",
+    "algorithm": "sha256"
+}

@@ -1,0 +1,5 @@
+{
+    "name": "BeardDollars",
+    "symbol": "BRDD",
+    "algorithm": "scrypt"
+}

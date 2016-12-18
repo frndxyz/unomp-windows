@@ -1,0 +1,6 @@
+{
+    "name": "Primexicoin",
+    "symbol": "PXI",
+    "algorithm": "x11",
+    "mposDiffMultiplier": 256
+}
